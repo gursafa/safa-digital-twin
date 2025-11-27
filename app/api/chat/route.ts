@@ -7,9 +7,10 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     const lastUserMessage = messages[messages.length - 1].content;
 
+    // SDK 0.24.0 ile bu model kesin çalışır
     const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash', // Yeni SDK ile bu kesin çalışır
-        systemInstruction: "Sen Safa Gür'ün dijital ikizisin. Samimi, kısa ve net cevaplar ver.",
+        model: 'gemini-1.5-flash', 
+        systemInstruction: "Sen Safa Gür'ün dijital ikizisin. Samimi, kısa ve net cevaplar ver. Emojiler kullan.",
     });
 
     const result = await model.generateContent(lastUserMessage);
