@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Safa Gür | Digital Twin",
-  description: "Chat with Safa Gürs AI Twin",
+  description: "Chat with Safa Gür's AI Twin",
 };
 
 export default function RootLayout({
