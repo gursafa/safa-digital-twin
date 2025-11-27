@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     // DÜZELTME: Değişken adını 'model' yaptık ki aşağıda hata vermesin.
     // Model adını 'gemini-1.5-flash' olarak güncelledik (kütüphane yenilendiği için).
     const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash', 
+        model: 'gemini-pro', 
         systemInstruction: SYSTEM_INSTRUCTION,
     });
 
