@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 
 export default function Chat() {
-  // Mesajları kendi hafızamızda (State) tutuyoruz
+  // Mesajları ve Yazı Kutusunu (input) tutan hafıza
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,11 +23,13 @@ export default function Chat() {
     const userMessage = { id: Date.now(), role: 'user', content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
+    
+    // Kutuyu temizle
     setInput('');
     setLoading(true);
 
     try {
-      // 2. Backend'e gönder (Kütüphanesiz, saf bağlantı)
+      // 2. Backend'e gönder
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,7 +81,7 @@ export default function Chat() {
         
         {loading && (
            <div className="message-row ai">
-             <div className="bubble ai text-gray-400 text-sm">
+             <div className="bubble ai" style={{ color: '#9ca3af', fontStyle: 'italic' }}>
                Yazıyor... ✍️
              </div>
            </div>
@@ -93,7 +95,7 @@ export default function Chat() {
             className="text-input"
             value={input}
             placeholder="Safa'ya bir soru sor..."
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => setInput(e.target.value)} 
             disabled={loading}
           />
           <button type="submit" className="send-button" disabled={!input.trim() || loading}>
@@ -104,6 +106,3 @@ export default function Chat() {
     </div>
   );
 }
-
-// Küçük bir helper (input state düzeltmesi için)
-function setText(val: string) { return val; }
