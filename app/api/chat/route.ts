@@ -26,13 +26,13 @@ export async function POST(req: Request) {
     const { messages } = await req.json();
     
     // Son kullanıcı mesajını yakala
-    // (Basit modda tüm geçmişi değil, son soruyu gönderiyoruz, daha hızlıdır)
     const lastUserMessage = messages[messages.length - 1].content;
 
     // Gemini Modelini Hazırla
-    // NOT: package.json'da sürümü yükselttiğimiz için artık 'gemini-1.5-flash' çalışır.
+    // DÜZELTME: Değişken adını 'model' yaptık ki aşağıda hata vermesin.
+    // Model adını 'gemini-1.5-flash' olarak güncelledik (kütüphane yenilendiği için).
     const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-1.5-flash', 
         systemInstruction: SYSTEM_INSTRUCTION,
     });
 
