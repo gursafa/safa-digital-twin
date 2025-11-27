@@ -1,10 +1,18 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// API Key kontrolü
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
-// --- SENİN SYSTEM PROMPT'UN ---
-const SYSTEM_INSTRUCTION = `
+export const dynamic = 'force-dynamic'; // Önbellek sorunlarını önler
+
+export async function POST(req: Request) {
+  try {
+    const { messages } = await req.json();
+    const lastUserMessage = messages[messages.length - 1].content;
+
+    // ARTIK BU MODEL %100 ÇALIŞACAK (Çünkü SDK güncellendi)
+    const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        systemInstruction: `
 Sen Safa Gür'ün Dijital İkizisin (Digital Twin).
 
 NAME: Safa Gür
@@ -18,30 +26,13 @@ KURALLAR:
 - Asla "belgelerden okudum" deme.
 - E-ticaret ve Otomasyon konularında uzman gibi konuş.
 - Müsaitlik sorulursa "Takvime baktım, müsaitim! 🔥" de.
-`;
-
-export async function POST(req: Request) {
-  try {
-    // Frontend'den gelen mesajları al
-    const { messages } = await req.json();
-    
-    // Son kullanıcı mesajını yakala
-    const lastUserMessage = messages[messages.length - 1].content;
-
-    // Gemini Modelini Hazırla
-    // DÜZELTME: Değişken adını 'model' yaptık ki aşağıda hata vermesin.
-    // Model adını 'gemini-1.5-flash' olarak güncelledik (kütüphane yenilendiği için).
-    const model = genAI.getGenerativeModel({ 
-        model: 'gemini-pro', 
-        systemInstruction: SYSTEM_INSTRUCTION,
+`,
     });
 
-    // Cevabı Üret
     const result = await model.generateContent(lastUserMessage);
     const response = await result.response;
     const text = response.text();
 
-    // Cevabı basit JSON olarak frontend'e yolla
     return Response.json({ role: 'assistant', content: text });
 
   } catch (error: any) {
