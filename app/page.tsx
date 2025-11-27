@@ -1,39 +1,50 @@
 'use client';
 
-import { useChat } from 'ai/react';
-import { useEffect, useRef, useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function Chat() {
-  const { messages, append } = useChat({
-    onError: (error) => {
-        console.error("Chat Hatası:", error);
-        alert("Bir hata oluştu. Lütfen sayfayı yenileyip tekrar dene.");
-    }
-  });
-  
-  const [text, setText] = useState('');
+  // Mesajları kendi hafızamızda (State) tutuyoruz
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) return;
+    if (!input.trim() || loading) return;
+
+    // 1. Kullanıcı mesajını ekrana ekle
+    const userMessage = { id: Date.now(), role: 'user', content: input };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setInput('');
+    setLoading(true);
 
     try {
-      await append({
-        role: 'user',
-        content: text,
+      // 2. Backend'e gönder (Kütüphanesiz, saf bağlantı)
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: newMessages }),
       });
-      setText('');
-    } catch (err: any) {
-      console.error(err);
+
+      if (!response.ok) throw new Error('Sunucu hatası');
+
+      const data = await response.json();
+
+      // 3. Gelen cevabı ekrana ekle
+      setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: data.content }]);
+      
+    } catch (error) {
+      alert("Mesaj gönderilemedi. Lütfen Vercel ayarlarından API KEY'in ekli olduğundan emin ol.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,6 +76,14 @@ export default function Chat() {
             </div>
           </div>
         ))}
+        
+        {loading && (
+           <div className="message-row ai">
+             <div className="bubble ai text-gray-400 text-sm">
+               Yazıyor... ✍️
+             </div>
+           </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -72,15 +91,19 @@ export default function Chat() {
         <form onSubmit={handleSend} className="input-form">
           <input
             className="text-input"
-            value={text}
+            value={input}
             placeholder="Safa'ya bir soru sor..."
             onChange={(e) => setText(e.target.value)}
+            disabled={loading}
           />
-          <button type="submit" className="send-button" disabled={!text.trim()}>
-            Gönder
+          <button type="submit" className="send-button" disabled={!input.trim() || loading}>
+            {loading ? '...' : 'Gönder'}
           </button>
         </form>
       </div>
     </div>
   );
 }
+
+// Küçük bir helper (input state düzeltmesi için)
+function setText(val: string) { return val; }

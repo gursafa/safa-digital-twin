@@ -1,42 +1,32 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { GoogleGenerativeAIStream, Message, StreamingTextResponse } from 'ai';
 
+// API Key'i alıyoruz
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
-
-// DİKKAT: 'edge' satırını sildik, varsayılan Node.js modunda çalışacak.
-// export const runtime = 'edge'; 
-
-const SYSTEM_INSTRUCTION = `
-Sen Safa Gür'ün Dijital İkizisin.
-Samimi, kısa ve net cevaplar ver. Emojiler kullan.
-Asla teknik bir asistan gibi konuşma.
-`;
 
 export async function POST(req: Request) {
   try {
+    // Mesajı al
     const { messages } = await req.json();
+    
+    // Son kullanıcı mesajını yakala
+    const lastUserMessage = messages[messages.length - 1].content;
 
-    const geminiModel = genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: SYSTEM_INSTRUCTION,
+    // Gemini Modelini Hazırla
+    const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        systemInstruction: "Sen Safa Gür'ün dijital ikizisin. Samimi, kısa ve net cevaplar ver. Emojiler kullan.",
     });
 
-    const lastMessage = messages[messages.length - 1];
-    const history = messages.slice(0, -1).map((m: Message) => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.content }],
-    }));
+    // Cevabı Üret (Akış/Stream yok, direkt cevap var)
+    const result = await model.generateContent(lastUserMessage);
+    const response = await result.response;
+    const text = response.text();
 
-    const chat = geminiModel.startChat({
-      history: history,
-    });
+    // Cevabı basit JSON olarak frontend'e yolla
+    return Response.json({ role: 'assistant', content: text });
 
-    const result = await chat.sendMessageStream(lastMessage.content);
-    const stream = GoogleGenerativeAIStream(result);
-
-    return new StreamingTextResponse(stream);
-  } catch (error) {
-    console.error("API Hatası:", error);
-    return new Response(JSON.stringify({ error: "Backend hatası oluştu" }), { status: 500 });
+  } catch (error: any) {
+    console.error("Backend Hatası:", error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 }
