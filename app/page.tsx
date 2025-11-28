@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 
 export default function Chat() {
-  // Mesajları ve Yazı Kutusunu (input) tutan hafıza
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,32 +18,33 @@ export default function Chat() {
     e.preventDefault();
     if (!input.trim() || loading) return;
 
-    // 1. Kullanıcı mesajını ekrana ekle
     const userMessage = { id: Date.now(), role: 'user', content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
-    
-    // Kutuyu temizle
     setInput('');
     setLoading(true);
 
     try {
-      // 2. Backend'e gönder
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: newMessages }),
       });
 
-      if (!response.ok) throw new Error('Sunucu hatası');
-
+      // Backend'den gelen cevabı kontrol et
       const data = await response.json();
 
-      // 3. Gelen cevabı ekrana ekle
+      if (!response.ok) {
+        // Eğer backend hata döndürdüyse, o hatayı fırlat
+        throw new Error(data.error || 'Bilinmeyen sunucu hatası');
+      }
+
       setMessages(prev => [...prev, { id: Date.now() + 1, role: 'assistant', content: data.content }]);
       
-    } catch (error) {
-      alert("Mesaj gönderilemedi. Lütfen Vercel ayarlarından API KEY'in ekli olduğundan emin ol.");
+    } catch (error: any) {
+      console.error(error);
+      // GERÇEK HATAYI EKRANA BASIYORUZ
+      alert("HATA: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export default function Chat() {
             <br />
             Ben Safa'nın yapay zeka ikiziyim. 
             <br />
-            Deneyimlerim, projelerim veya hobilerim hakkında bana soru sorabilirsin! 🚀
+            Projelerim ve deneyimlerim hakkında bana soru sorabilirsin! 🚀
           </div>
         )}
 
@@ -95,7 +95,7 @@ export default function Chat() {
             className="text-input"
             value={input}
             placeholder="Safa'ya bir soru sor..."
-            onChange={(e) => setInput(e.target.value)} 
+            onChange={(e) => setInput(e.target.value)}
             disabled={loading}
           />
           <button type="submit" className="send-button" disabled={!input.trim() || loading}>
