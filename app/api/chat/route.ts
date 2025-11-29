@@ -1,3 +1,4 @@
+// En güvenli Node.js modu
 export const runtime = 'nodejs'; 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +12,11 @@ export async function POST(req: Request) {
       return Response.json({ error: "API Key bulunamadı" }, { status: 500 });
     }
 
-    // PENCERE DEĞİŞİKLİĞİ 1: Modeli 'gemini-pro' yapıyoruz. (Dünyanın en yaygın modeli)
-    // Bu modelin 'bulunamama' ihtimali neredeyse sıfırdır.
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+    // DÜZELTME: 'v1beta' yerine 'v1' (Kararlı Sürüm) kullanıyoruz.
+    // Model olarak 'gemini-1.5-flash' bu kapıda kesinlikle vardır.
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-    // PENCERE DEĞİŞİKLİĞİ 2: 'systemInstruction' parametresini sildik.
-    // Çünkü bazı modeller/bölgeler bu parametreyi görünce "Ben bunu tanımıyorum" diyip 404 veriyor.
-    // Onun yerine talimatı, sanki bir önceki konuşmaymış gibi (history) ekliyoruz.
+    // System Prompt'u yine mesaj gibi gizleyerek yolluyoruz (En garantisi)
     const payload = {
       contents: [
         {
@@ -44,11 +43,15 @@ export async function POST(req: Request) {
     if (!googleResponse.ok) {
       const errorData = await googleResponse.json();
       console.error("Google API Hatası:", JSON.stringify(errorData));
-      throw new Error(errorData.error?.message || 'Google API Yanıt Vermedi');
+      
+      // Eğer yine 404 alırsak hatayı net görelim
+      throw new Error(errorData.error?.message || `API Hatası: ${googleResponse.status}`);
     }
 
     const data = await googleResponse.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Cevap alınamadı.";
+    
+    // Cevabı güvenli al
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Cevap üretilemedi.";
 
     return Response.json({ role: 'assistant', content: text });
 
