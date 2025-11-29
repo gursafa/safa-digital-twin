@@ -1,4 +1,3 @@
-// Node.js runtime kullanıyoruz (En güvenlisi)
 export const runtime = 'nodejs'; 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +11,10 @@ export async function POST(req: Request) {
       return Response.json({ error: "API Key bulunamadı" }, { status: 500 });
     }
 
-    // DÜZELTME BURADA: Model isminin sonuna '-latest' ekledik.
-    // Bu, Google'ın "Hangi Flash?" sorusunu çözer.
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+    // DÜZELTME: En kararlı, sürüm numaralı ismi kullanıyoruz.
+    // 'latest' veya sadece 'flash' bazen beta süreçlerinde değişebiliyor.
+    // 'gemini-1.5-flash-001' ise sabitlenmiş, güvenli sürümdür.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-001:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
         }
       ],
       systemInstruction: {
-        parts: [{ text: "Sen Safa Gür'ün dijital ikizisin. Samimi, kısa ve net cevaplar ver. Emojiler kullan. Asla 'belgelerden okudum' deme." }]
+        parts: [{ text: "Sen Safa Gür'ün dijital ikizisin. Samimi, kısa ve net cevaplar ver. Emojiler kullan. Asla 'belgelerden okudum' deme. Türkçe konuş." }]
       }
     };
 
@@ -36,7 +36,6 @@ export async function POST(req: Request) {
 
     if (!googleResponse.ok) {
       const errorData = await googleResponse.json();
-      // Hatayı logluyoruz ki Vercel'de görebilelim
       console.error("Google API Hatası Detaylı:", JSON.stringify(errorData));
       throw new Error(errorData.error?.message || 'Google API Hatası');
     }
