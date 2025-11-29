@@ -1,5 +1,6 @@
-// Edge runtime'ı kaldırdık, varsayılan Node.js kullanacak (Daha güvenli)
-// export const runtime = 'edge'; 
+// Node.js runtime kullanıyoruz (En güvenlisi)
+export const runtime = 'nodejs'; 
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
@@ -7,13 +8,13 @@ export async function POST(req: Request) {
     const lastUserMessage = messages[messages.length - 1].content;
     const apiKey = process.env.GOOGLE_API_KEY;
 
-    // API Key kontrolü (Loglara da yazıyoruz)
     if (!apiKey) {
-      console.error("HATA: API Key server tarafında bulunamadı!");
-      return Response.json({ error: "Sunucuda API Anahtarı Eksik (Vercel Env Var)" }, { status: 500 });
+      return Response.json({ error: "API Key bulunamadı" }, { status: 500 });
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // DÜZELTME BURADA: Model isminin sonuna '-latest' ekledik.
+    // Bu, Google'ın "Hangi Flash?" sorusunu çözer.
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
 
     const payload = {
       contents: [
@@ -35,13 +36,15 @@ export async function POST(req: Request) {
 
     if (!googleResponse.ok) {
       const errorData = await googleResponse.json();
-      console.error("Google API Hatası:", JSON.stringify(errorData));
-      // Gerçek Google hatasını frontend'e yolluyoruz
-      throw new Error(errorData.error?.message || 'Google API Yanıt Vermedi');
+      // Hatayı logluyoruz ki Vercel'de görebilelim
+      console.error("Google API Hatası Detaylı:", JSON.stringify(errorData));
+      throw new Error(errorData.error?.message || 'Google API Hatası');
     }
 
     const data = await googleResponse.json();
-    const text = data.candidates[0].content.parts[0].text;
+    
+    // Cevap yapısını güvenli şekilde alıyoruz
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Cevap oluşturulamadı.";
 
     return Response.json({ role: 'assistant', content: text });
 
